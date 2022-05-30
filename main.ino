@@ -295,6 +295,71 @@ void demodulatorObserver() {
   float Maximum;
   Maximum = max(r, g);
   Maximum = max(Maximum, b);
+
+  //Validar Inicio
+  if (r > 150 && g > 150 && !isSensorReading) {
+    isSensorReading = true;
+    //Setting initial node type
+    if (initialNodeType == "") {
+      initialNodeType = "Receptor";
+    }
+  }
+  //Validar Fin
+  if (r > 150 && b > 150 && isSensorReading) {
+    isSensorReading = false;
+  }
+  //Leer señales electricas transmitidas por la fibra optica
+  if (isSensorReading) {
+    demodulatorReading(r, g, b);
+  }
+  //Receptor cases
+  if (!isSensorReading && textSent != "") {
+    receptorCases();
+  }
+}
+
+void demodulatorReading(int r, int g, int b) {
+  Serial.println(dataSent); //For testing porpouses
+  bitCases(r, g, b, dataSent);
+  if (dataSent.length() == 8) {
+    //---------------------Bloque Funcionamiento----------------------
+    characterCounter++;
+    checkSumCounter += 8;
+    if (appMode == "&") {
+      receptorBloque(false);
+    }
+    //---------------------Bloque Funcionamiento----------------------
+    Serial.println(valorAscii(dataSent)); //For testing porpouses letter
+    textSent += valorAscii(dataSent);
+    dataSent = "";
+  }
+  //For testing propositos
+  Serial.print("R: "); Serial.print(r, DEC); Serial.print(" ");
+  Serial.print("G: "); Serial.print(g, DEC); Serial.print(" ");
+  Serial.print("B: "); Serial.print(b, DEC); Serial.print(" ");
+  Serial.println(" ");
+}
+
+void bitCases(int R, int G, int B, String current) {
+  if (R > 150 && G > 150 && B > 150) { //WHITE
+    dataSent += "00";
+  } else if (B > 150) { //BLUE
+    dataSent += "01";
+  } else if (G > 150) { //GREEN
+    dataSent += "10";
+  } else if (R > 150) { //RED
+    dataSent += "11";
+  }
+}
+
+//Regresa una cadena binaria en su correspondiente valor ascii
+char valorAscii(String CadenaBinaria)
+{
+  int Multiplo = 1;
+  char Res = 0;
+  char Bit;
+  for (int Cont = CadenaBinaria.length() - 1; Cont >= 0; Cont--)
+  {
     //Obtengo el bit que se esta manipulando
     Bit = CadenaBinaria.charAt(Cont);
     if (Bit == '1')
